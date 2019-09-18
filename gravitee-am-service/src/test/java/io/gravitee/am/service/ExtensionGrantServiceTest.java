@@ -15,7 +15,6 @@
  */
 package io.gravitee.am.service;
 
-import io.gravitee.am.model.Client;
 import io.gravitee.am.model.Domain;
 import io.gravitee.am.model.ExtensionGrant;
 import io.gravitee.am.repository.exceptions.TechnicalException;

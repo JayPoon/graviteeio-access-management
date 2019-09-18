@@ -18,7 +18,7 @@ package io.gravitee.am.gateway.handler.root.service.user;
 import io.gravitee.am.gateway.handler.common.auth.idp.IdentityProviderManager;
 import io.gravitee.am.gateway.handler.root.service.user.impl.UserServiceImpl;
 import io.gravitee.am.identityprovider.api.UserProvider;
-import io.gravitee.am.model.Client;
+import io.gravitee.am.model.oidc.Client;
 import io.gravitee.am.model.Domain;
 import io.gravitee.am.model.User;
 import io.gravitee.am.model.account.AccountSettings;

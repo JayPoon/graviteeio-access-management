@@ -18,11 +18,10 @@ package io.gravitee.am.gateway.handler.root.resources.endpoint.user.password;
 import io.gravitee.am.common.oauth2.Parameters;
 import io.gravitee.am.gateway.handler.root.service.user.UserService;
 import io.gravitee.am.gateway.handler.root.resources.handler.user.UserRequestHandler;
-import io.gravitee.am.model.Client;
+import io.gravitee.am.model.oidc.Client;
 import io.gravitee.am.model.User;
 import io.vertx.reactivex.ext.web.RoutingContext;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 

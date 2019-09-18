@@ -18,10 +18,10 @@ package io.gravitee.am.gateway.handler.common.client.impl;
 import io.gravitee.am.gateway.core.event.ClientEvent;
 import io.gravitee.am.gateway.core.event.EventManager;
 import io.gravitee.am.gateway.handler.common.client.ClientSyncService;
-import io.gravitee.am.model.Client;
 import io.gravitee.am.model.Domain;
 import io.gravitee.am.model.common.event.Payload;
-import io.gravitee.am.repository.management.api.ClientRepository;
+import io.gravitee.am.model.oidc.Client;
+import io.gravitee.am.service.ClientService;
 import io.gravitee.common.event.Event;
 import io.gravitee.common.event.EventListener;
 import io.gravitee.common.service.AbstractService;
@@ -33,11 +33,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -53,12 +49,11 @@ public class ClientSyncServiceImpl extends AbstractService implements ClientSync
     private ConcurrentMap<String, Set<Client>> domainsClients = new ConcurrentHashMap<>();
     private ConcurrentMap<String, Set<Client>> domainsTemplates = new ConcurrentHashMap<>();
 
-
     @Autowired
     private Domain domain;
 
     @Autowired
-    private ClientRepository clientRepository;
+    private ClientService clientService;
 
     @Autowired
     private EventManager eventManager;
@@ -103,7 +98,7 @@ public class ClientSyncServiceImpl extends AbstractService implements ClientSync
     @Override
     public void afterPropertiesSet() {
         logger.info("Initializing clients for domain {}", domain.getName());
-        clientRepository.findAll()
+        clientService.findAll()
                 .subscribe(
                         clients -> {
                             updateClients(clients);
@@ -144,7 +139,7 @@ public class ClientSyncServiceImpl extends AbstractService implements ClientSync
     private void updateClient(String clientId, ClientEvent clientEvent) {
         final String eventType = clientEvent.toString().toLowerCase();
         logger.info("Domain {} has received {} client event for {}", domain.getName(), eventType, clientId);
-        clientRepository.findById(clientId)
+        clientService.findById(clientId)
                 .subscribe(
                         client -> {
                             updateClients(Collections.singleton(client));

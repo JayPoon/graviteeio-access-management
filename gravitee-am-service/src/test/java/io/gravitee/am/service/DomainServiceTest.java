@@ -17,6 +17,7 @@ package io.gravitee.am.service;
 
 import io.gravitee.am.model.*;
 import io.gravitee.am.model.oauth2.Scope;
+import io.gravitee.am.model.oidc.Client;
 import io.gravitee.am.repository.exceptions.TechnicalException;
 import io.gravitee.am.repository.management.api.DomainRepository;
 import io.gravitee.am.service.exception.DomainAlreadyExistsException;

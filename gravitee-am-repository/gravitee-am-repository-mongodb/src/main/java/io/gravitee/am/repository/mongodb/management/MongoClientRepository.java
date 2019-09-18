@@ -19,7 +19,7 @@ import com.mongodb.BasicDBObject;
 import com.mongodb.reactivestreams.client.MongoCollection;
 import io.gravitee.am.common.oauth2.TokenTypeHint;
 import io.gravitee.am.common.utils.RandomString;
-import io.gravitee.am.model.Client;
+import io.gravitee.am.model.oidc.Client;
 import io.gravitee.am.model.TokenClaim;
 import io.gravitee.am.model.account.AccountSettings;
 import io.gravitee.am.model.common.Page;

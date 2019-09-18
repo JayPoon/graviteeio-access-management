@@ -16,9 +16,12 @@
 package io.gravitee.am.service;
 
 import io.gravitee.am.identityprovider.api.User;
-import io.gravitee.am.model.Client;
 import io.gravitee.am.model.common.Page;
-import io.gravitee.am.service.model.*;
+import io.gravitee.am.model.oidc.Client;
+import io.gravitee.am.service.model.NewClient;
+import io.gravitee.am.service.model.PatchClient;
+import io.gravitee.am.service.model.TopClient;
+import io.gravitee.am.service.model.TotalClient;
 import io.reactivex.Completable;
 import io.reactivex.Maybe;
 import io.reactivex.Single;
@@ -31,6 +34,7 @@ import java.util.Set;
  * @author Alexandre FARIA (contact at alexandrefaria.net)
  * @author GraviteeSource Team
  */
+@Deprecated
 public interface ClientService {
 
     Single<Set<Client>> findAll();
@@ -69,8 +73,6 @@ public interface ClientService {
 
     Single<Client> renewClientSecret(String domain, String id, User principal);
 
-    Single<Client> renewClientSecret(Client client, User principal);
-
     Completable delete(String clientId, User principal);
 
     Single<Client> update(Client client);
@@ -89,10 +91,6 @@ public interface ClientService {
 
     default Single<Client> renewClientSecret(String domain, String id) {
         return renewClientSecret(domain, id, null);
-    }
-
-    default Single<Client> renewClientSecret(Client client) {
-        return renewClientSecret(client, null);
     }
 
     default Completable delete(String clientId) {

@@ -15,7 +15,7 @@
  */
 package io.gravitee.am.service.model;
 
-import io.gravitee.am.model.Client;
+import io.gravitee.am.model.oidc.Client;
 import io.gravitee.am.model.TokenClaim;
 import io.gravitee.am.model.account.AccountSettings;
 import io.gravitee.am.model.oidc.JWKSet;

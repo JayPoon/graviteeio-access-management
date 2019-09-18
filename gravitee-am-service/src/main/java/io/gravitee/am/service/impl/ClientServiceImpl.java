@@ -15,41 +15,19 @@
  */
 package io.gravitee.am.service.impl;
 
-import io.gravitee.am.common.audit.EventType;
-import io.gravitee.am.common.exception.oauth2.OAuth2Exception;
 import io.gravitee.am.common.utils.RandomString;
 import io.gravitee.am.common.utils.SecureRandomString;
 import io.gravitee.am.identityprovider.api.User;
-import io.gravitee.am.model.Client;
+import io.gravitee.am.model.Application;
 import io.gravitee.am.model.common.Page;
-import io.gravitee.am.model.common.event.Action;
-import io.gravitee.am.model.common.event.Event;
-import io.gravitee.am.model.common.event.Payload;
-import io.gravitee.am.model.common.event.Type;
+import io.gravitee.am.model.oidc.Client;
 import io.gravitee.am.repository.management.api.ClientRepository;
 import io.gravitee.am.repository.oauth2.api.AccessTokenRepository;
-import io.gravitee.am.service.AuditService;
+import io.gravitee.am.service.ApplicationService;
 import io.gravitee.am.service.ClientService;
-import io.gravitee.am.service.DomainService;
-import io.gravitee.am.service.EmailTemplateService;
-import io.gravitee.am.service.FormService;
-import io.gravitee.am.service.IdentityProviderService;
-import io.gravitee.am.service.ScopeService;
-import io.gravitee.am.service.exception.AbstractManagementException;
-import io.gravitee.am.service.exception.ClientAlreadyExistsException;
-import io.gravitee.am.service.exception.ClientNotFoundException;
-import io.gravitee.am.service.exception.DomainNotFoundException;
 import io.gravitee.am.service.exception.InvalidClientMetadataException;
-import io.gravitee.am.service.exception.InvalidRedirectUriException;
 import io.gravitee.am.service.exception.TechnicalManagementException;
-import io.gravitee.am.service.model.NewClient;
-import io.gravitee.am.service.model.PatchClient;
-import io.gravitee.am.service.model.TopClient;
-import io.gravitee.am.service.model.TotalClient;
-import io.gravitee.am.service.reporter.builder.AuditBuilder;
-import io.gravitee.am.service.reporter.builder.management.ClientAuditBuilder;
-import io.gravitee.am.service.utils.GrantTypeUtils;
-import io.gravitee.am.common.web.UriBuilder;
+import io.gravitee.am.service.model.*;
 import io.reactivex.Completable;
 import io.reactivex.Maybe;
 import io.reactivex.Observable;
@@ -58,16 +36,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.springframework.util.CollectionUtils;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -86,41 +57,22 @@ public class ClientServiceImpl implements ClientService {
     private ClientRepository clientRepository;
 
     @Autowired
-    private IdentityProviderService identityProviderService;
+    private ApplicationService applicationService;
 
     @Autowired
     private AccessTokenRepository accessTokenRepository;
 
-    @Autowired
-    private DomainService domainService;
-
-    @Autowired
-    private ScopeService scopeService;
-
-    @Autowired
-    private EmailTemplateService emailTemplateService;
-
-    @Autowired
-    private FormService formService;
-
-    @Autowired
-    private AuditService auditService;
-
     @Override
     public Maybe<Client> findById(String id) {
         LOGGER.debug("Find client by ID: {}", id);
-        return clientRepository.findById(id)
-                .map(client -> {
+        return applicationService.findById(id)
+                .map(application -> {
+                    Client client = convert(application);
                     // Send an empty array in case of no grant types
                     if (client.getAuthorizedGrantTypes() == null) {
                         client.setAuthorizedGrantTypes(Collections.emptyList());
                     }
                     return client;
-                })
-                .onErrorResumeNext(ex -> {
-                    LOGGER.error("An error occurs while trying to find a client using its ID: {}", id, ex);
-                    return Maybe.error(new TechnicalManagementException(
-                            String.format("An error occurs while trying to find a client using its ID: %s", id), ex));
                 });
     }
 
@@ -138,23 +90,21 @@ public class ClientServiceImpl implements ClientService {
     @Override
     public Single<Set<Client>> findByDomain(String domain) {
         LOGGER.debug("Find clients by domain", domain);
-        return clientRepository.findByDomain(domain)
-                .onErrorResumeNext(ex -> {
-                    LOGGER.error("An error occurs while trying to find clients by domain: {}", domain, ex);
-                    return Single.error(new TechnicalManagementException(
-                            String.format("An error occurs while trying to find clients by domain: %s", domain), ex));
-                });
+        return applicationService.findByDomain(domain, 0, Integer.MAX_VALUE)
+                .map(pagedApplications -> pagedApplications.getData()
+                        .stream()
+                        .map(this::convert)
+                        .collect(Collectors.toSet()));
     }
 
     @Override
     public Single<Set<Client>> search(String domain, String query) {
         LOGGER.debug("Search clients for domain {} and with query {}", domain, query);
-        return clientRepository.search(domain, query)
-                .onErrorResumeNext(ex -> {
-                    LOGGER.error("An error occurs while trying to find clients for domain {} and query {}", domain, query, ex);
-                    return Single.error(new TechnicalManagementException(
-                            String.format("An error occurs while trying to find clients for domain %s and query %s", domain, query), ex));
-                });
+        return applicationService.search(domain, query, 0, Integer.MAX_VALUE)
+                .map(pagedApplications -> pagedApplications.getData()
+                        .stream()
+                        .map(this::convert)
+                        .collect(Collectors.toSet()));
     }
 
     @Override
@@ -201,7 +151,11 @@ public class ClientServiceImpl implements ClientService {
     @Override
     public Single<Set<Client>> findAll() {
         LOGGER.debug("Find clients");
-        return clientRepository.findAll()
+        return applicationService.findAll(0, Integer.MAX_VALUE)
+                .map(pagedApplications -> pagedApplications.getData()
+                        .stream()
+                        .map(this::convert)
+                        .collect(Collectors.toSet()))
                 .onErrorResumeNext(ex -> {
                     LOGGER.error("An error occurs while trying to find clients", ex);
                     return Single.error(new TechnicalManagementException("An error occurs while trying to find clients", ex));
@@ -292,27 +246,8 @@ public class ClientServiceImpl implements ClientService {
     @Override
     public Single<Client> create(String domain, NewClient newClient, User principal) {
         LOGGER.debug("Create a new client {} for domain {}", newClient, domain);
-        return clientRepository.findByClientIdAndDomain(newClient.getClientId(), domain)
-                .isEmpty()
-                .flatMap(isEmpty -> {
-                    if (!isEmpty) {
-                        return Single.error(new ClientAlreadyExistsException(newClient.getClientId(), domain));
-                    }
-
-                    Client client = new Client();
-                    client.setClientId(newClient.getClientId());
-                    client.setClientSecret(newClient.getClientSecret());
-                    client.setClientName(newClient.getClientName());
-                    client.setDomain(domain);
-                    //AM UI first step client creation does not provide field to specify redirect_uris, so better no use code grant by default.
-                    client.setAuthorizedGrantTypes(Arrays.asList());
-                    client.setResponseTypes(Arrays.asList());
-                    return Single.just(client);
-                })
-                .flatMap(client -> this.create(client))
-                .onErrorResumeNext(this::handleError)
-                .doOnSuccess(client -> auditService.report(AuditBuilder.builder(ClientAuditBuilder.class).principal(principal).type(EventType.CLIENT_CREATED).client(client)))
-                .doOnError(throwable -> auditService.report(AuditBuilder.builder(ClientAuditBuilder.class).principal(principal).type(EventType.CLIENT_CREATED).throwable(throwable)));
+        return applicationService.create(domain, convert(newClient), principal)
+                .map(this::convert);
     }
 
     @Override
@@ -345,15 +280,9 @@ public class ClientServiceImpl implements ClientService {
         client.setCreatedAt(new Date());
         client.setUpdatedAt(client.getCreatedAt());
 
-        return this.validateClientMetadata(client)
-                .flatMap(clientRepository::create)
-                .flatMap(justCreatedClient -> {
-                    // Reload domain to take care about client creation
-                    Event event = new Event(Type.CLIENT, new Payload(justCreatedClient.getId(), justCreatedClient.getDomain(), Action.CREATE));
-                    return domainService.reload(client.getDomain(), event).flatMap(domain1 -> Single.just(justCreatedClient));
-                })
-                .onErrorResumeNext(this::handleError);
-        }
+        return applicationService.create(convert(client))
+                .map(this::convert);
+    }
 
     @Override
     public Single<Client> update(Client client) {
@@ -363,199 +292,46 @@ public class ClientServiceImpl implements ClientService {
             return Single.error(new InvalidClientMetadataException("No domain set on client"));
         }
 
-        return clientRepository.findById(client.getId())
-                .switchIfEmpty(Maybe.error(new ClientNotFoundException(client.getId())))
-                .flatMapSingle(found -> Single.just(client))
-                .flatMap(this::validateClientMetadata)
-                .flatMap(this::updateClientAndReloadDomain)
-                .onErrorResumeNext(this::handleError);
+        return applicationService.update(convert(client))
+                .map(this::convert);
     }
 
     @Override
     public Single<Client> patch(String domain, String id, PatchClient patchClient, boolean forceNull, User principal) {
         LOGGER.debug("Patch a client {} for domain {}", id, domain);
-        return clientRepository.findById(id)
-                .switchIfEmpty(Maybe.error(new ClientNotFoundException(id)))
-                .flatMapSingle(client -> {
-                    //Refresh with existing identity providers.
-                    Optional<Set<String>> identities = patchClient.getIdentities();
-                    if (identities == null || !identities.isPresent()) {
-                        return Single.just(client);
-                    } else {
-                        return Observable.fromIterable(identities.get())
-                                .flatMapMaybe(identityProviderId -> identityProviderService.findById(identityProviderId))
-                                .toList()
-                                .flatMap(idp -> Single.just(client));
-                    }
-                })
-                .flatMap(toPatch -> Single.just(patchClient.patch(toPatch, forceNull))
-                        .flatMap(this::validateClientMetadata)
-                        .flatMap(this::updateClientAndReloadDomain)
-                        .doOnSuccess(client -> auditService.report(AuditBuilder.builder(ClientAuditBuilder.class).principal(principal).type(EventType.CLIENT_UPDATED).oldValue(toPatch).client(client)))
-                        .doOnError(throwable -> auditService.report(AuditBuilder.builder(ClientAuditBuilder.class).principal(principal).type(EventType.CLIENT_UPDATED).throwable(throwable))))
-                .onErrorResumeNext(this::handleError);
+        return applicationService.patch(domain, id, convert(patchClient), principal)
+                .map(this::convert);
     }
 
     @Override
     public Completable delete(String clientId, User principal) {
         LOGGER.debug("Delete client {}", clientId);
-        return clientRepository.findById(clientId)
-                .switchIfEmpty(Maybe.error(new ClientNotFoundException(clientId)))
-                .flatMapCompletable(client -> {
-                    // Reload domain to take care about delete client
-                    Event event = new Event(Type.CLIENT, new Payload(client.getId(), client.getDomain(), Action.DELETE));
-                    return clientRepository.delete(clientId)
-                            .andThen(domainService.reload(client.getDomain(), event).toCompletable())
-                            // delete email templates
-                            .andThen(emailTemplateService.findByDomainAndClient(client.getDomain(), client.getId())
-                                    .flatMapCompletable(emails -> {
-                                        List<Completable> deleteEmailsCompletable = emails.stream().map(e -> emailTemplateService.delete(e.getId())).collect(Collectors.toList());
-                                        return Completable.concat(deleteEmailsCompletable);
-                                    })
-                            )
-                            // delete form templates
-                            .andThen(formService.findByDomainAndClient(client.getDomain(), client.getId())
-                                    .flatMapCompletable(forms -> {
-                                        List<Completable> deleteFormsCompletable = forms.stream().map(f -> formService.delete(f.getId())).collect(Collectors.toList());
-                                        return Completable.concat(deleteFormsCompletable);
-                                    })
-                            )
-                            .doOnComplete(() -> auditService.report(AuditBuilder.builder(ClientAuditBuilder.class).principal(principal).type(EventType.CLIENT_DELETED).client(client)))
-                            .doOnError(throwable -> auditService.report(AuditBuilder.builder(ClientAuditBuilder.class).principal(principal).type(EventType.CLIENT_DELETED).throwable(throwable)));
-                })
-                .onErrorResumeNext(ex -> {
-                    if (ex instanceof AbstractManagementException) {
-                        return Completable.error(ex);
-                    }
-
-                    LOGGER.error("An error occurs while trying to delete client: {}", clientId, ex);
-                    return Completable.error(new TechnicalManagementException(
-                            String.format("An error occurs while trying to delete client: %s", clientId), ex));
-                });
+        return applicationService.delete(clientId, principal);
     }
 
     @Override
     public Single<Client> renewClientSecret(String domain, String id, User principal) {
         LOGGER.debug("Renew client secret for client {} in domain {}", id, domain);
-        return clientRepository.findById(id)
-                .switchIfEmpty(Maybe.error(new ClientNotFoundException(id)))
-                .flatMapSingle(client -> this.renewClientSecret(client, principal))
-                .onErrorResumeNext(this::handleError);
+        return applicationService.renewClientSecret(domain, id, principal)
+                .map(this::convert);
     }
 
-    @Override
-    public Single<Client> renewClientSecret(Client client, User principal) {
-        LOGGER.debug("Renew client secret for client {} in domain {}", client.getId(), client.getDomain());
-
-        // update client secret
-        client.setClientSecret(SecureRandomString.generate());
-        // update client and reload domain
-        return updateClientAndReloadDomain(client)
-                .onErrorResumeNext(this::handleError)
-                .doOnSuccess(updatedClient -> auditService.report(AuditBuilder.builder(ClientAuditBuilder.class).principal(principal).type(EventType.CLIENT_SECRET_RENEWED).client(updatedClient)))
-                .doOnError(throwable -> auditService.report(AuditBuilder.builder(ClientAuditBuilder.class).principal(principal).type(EventType.CLIENT_SECRET_RENEWED).throwable(throwable)));
+    private NewClient convert(NewApplication newApplication) {
+        return null;
     }
-
-    /**
-     * <pre>
-     * This function will return an error if :
-     * We try to enable Dynamic Client Registration on client side while it is not enabled on domain.
-     * The redirect_uris do not respect domain conditions (localhost, scheme and wildcard)
-     * </pre>
-     * @param client client to check
-     * @return a client only if every conditions are respected.
-     */
-    private Single<Client> validateClientMetadata(Client client) {
-        return GrantTypeUtils.validateGrantTypes(client)
-                .flatMap(this::validateRedirectUris)
-                .flatMap(this::validateScopes);
+    private NewApplication convert(NewClient newClient) {
+        return null;
     }
-
-    private Single<Client> validateRedirectUris(Client client) {
-        return domainService.findById(client.getDomain())
-                .switchIfEmpty(Maybe.error(new DomainNotFoundException(client.getDomain())))
-                .flatMapSingle(domain -> {
-
-                    //check redirect_uri
-                    if(GrantTypeUtils.isRedirectUriRequired(client.getAuthorizedGrantTypes()) && CollectionUtils.isEmpty(client.getRedirectUris())) {
-                        return Single.error(new InvalidRedirectUriException());
-                    }
-
-                    //check redirect_uri content
-                    if (client.getRedirectUris() != null) {
-                        for (String redirectUri : client.getRedirectUris()) {
-
-                            try {
-                                URI uri = UriBuilder.fromURIString(redirectUri).build();
-
-                                if(uri.getScheme()==null) {
-                                    return Single.error(new InvalidRedirectUriException("redirect_uri : " + redirectUri + " is malformed"));
-                                }
-
-                                if (!domain.isRedirectUriLocalhostAllowed() && UriBuilder.isHttp(uri.getScheme()) && UriBuilder.isLocalhost(uri.getHost())) {
-                                    return Single.error(new InvalidRedirectUriException("localhost is forbidden"));
-                                }
-                                //check http scheme
-                                if (!domain.isRedirectUriUnsecuredHttpSchemeAllowed() && uri.getScheme().equalsIgnoreCase("http")) {
-                                    return Single.error(new InvalidRedirectUriException("Unsecured http scheme is forbidden"));
-                                }
-                                //check wildcard
-                                if (!domain.isRedirectUriWildcardAllowed() && uri.getPath().contains("*")) {
-                                    return Single.error(new InvalidRedirectUriException("Wildcard are forbidden"));
-                                }
-                            }
-                            catch (IllegalArgumentException | URISyntaxException ex) {
-                                return Single.error(new InvalidRedirectUriException("redirect_uri : " + redirectUri + " is malformed"));
-                            }
-                        }
-                    }
-                    return Single.just(client);
-                });
+    private PatchClient convert(PatchApplication patchApplication) {
+        return null;
     }
-
-    private Single<Client> validateScopes(Client client) {
-        // check scopes and scope approvals
-        return scopeService.validateScope(client.getDomain(), client.getScopes())
-                .map(isValid -> {
-                    // scopes are valid, let's check scope approvals
-                    if (isValid && client.getScopeApprovals() != null) {
-                        Map<String, Integer> scopeApprovals = client.getScopeApprovals()
-                                .entrySet()
-                                .stream()
-                                .filter(entry -> client.getScopes() != null && client.getScopes().contains(entry.getKey()))
-                                .collect(Collectors.toMap(
-                                        entry -> entry.getKey(),
-                                        entry -> entry.getValue()));
-                        client.setScopeApprovals(scopeApprovals);
-                    }
-                    return isValid;
-                })
-                .flatMap(isValid -> {
-                    if (!isValid) {
-                        //last boolean come from scopes validation...
-                        return Single.error(new InvalidClientMetadataException("non valid scopes"));
-                    }
-
-                    return Single.just(client);
-                });
+    private PatchApplication convert(PatchClient patchClient) {
+        return null;
     }
-
-    private Single<Client> updateClientAndReloadDomain(Client client) {
-        client.setUpdatedAt(new Date());
-        return clientRepository.update(client)
-                .flatMap(updatedClient -> {
-                    // Reload domain to take care about client update
-                    Event event = new Event(Type.CLIENT, new Payload(updatedClient.getId(), client.getDomain(), Action.UPDATE));
-                    return domainService.reload(client.getDomain(), event).flatMap(domain1 -> Single.just(updatedClient));
-                });
+    private Client convert(Application application) {
+        return null;
     }
-
-    private Single<Client> handleError(Throwable ex) {
-        if (ex instanceof AbstractManagementException || ex instanceof OAuth2Exception) {
-            return Single.error(ex);
-        }
-
-        LOGGER.error("An error occurs while trying to create or update a client", ex);
-        return Single.error(new TechnicalManagementException("An error occurs while trying to create or update a client", ex));
+    private Application convert(Client client) {
+        return null;
     }
 }

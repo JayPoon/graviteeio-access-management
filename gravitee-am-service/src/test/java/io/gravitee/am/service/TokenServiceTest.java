@@ -15,7 +15,7 @@
  */
 package io.gravitee.am.service;
 
-import io.gravitee.am.model.Client;
+import io.gravitee.am.model.oidc.Client;
 import io.gravitee.am.repository.exceptions.TechnicalException;
 import io.gravitee.am.repository.oauth2.api.AccessTokenRepository;
 import io.gravitee.am.service.exception.TechnicalManagementException;

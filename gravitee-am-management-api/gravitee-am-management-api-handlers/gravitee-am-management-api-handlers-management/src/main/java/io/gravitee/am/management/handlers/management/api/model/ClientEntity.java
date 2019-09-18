@@ -15,7 +15,7 @@
  */
 package io.gravitee.am.management.handlers.management.api.model;
 
-import io.gravitee.am.model.Client;
+import io.gravitee.am.model.oidc.Client;
 
 /**
  * @author Titouan COMPIEGNE (titouan.compiegne at graviteesource.com)

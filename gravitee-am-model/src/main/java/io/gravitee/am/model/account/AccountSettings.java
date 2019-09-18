@@ -48,6 +48,18 @@ public class AccountSettings {
      */
     private boolean completeRegistrationWhenResetPassword;
 
+    public AccountSettings() {
+    }
+
+    public AccountSettings(AccountSettings other) {
+        this.inherited = other.inherited;
+        this.loginAttemptsDetectionEnabled = other.loginAttemptsDetectionEnabled;
+        this.maxLoginAttempts = other.maxLoginAttempts;
+        this.loginAttemptsResetTime = other.loginAttemptsResetTime;
+        this.accountBlockedDuration = other.accountBlockedDuration;
+        this.completeRegistrationWhenResetPassword = other.completeRegistrationWhenResetPassword;
+    }
+
     public boolean isInherited() {
         return inherited;
     }

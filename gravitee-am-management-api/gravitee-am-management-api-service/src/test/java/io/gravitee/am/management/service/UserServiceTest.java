@@ -17,7 +17,7 @@ package io.gravitee.am.management.service;
 
 import io.gravitee.am.identityprovider.api.UserProvider;
 import io.gravitee.am.management.service.impl.UserServiceImpl;
-import io.gravitee.am.model.Client;
+import io.gravitee.am.model.oidc.Client;
 import io.gravitee.am.model.Role;
 import io.gravitee.am.model.User;
 import io.gravitee.am.service.AuditService;

@@ -15,7 +15,9 @@
  */
 package io.gravitee.am.service.utils;
 
-import io.gravitee.am.model.Client;
+import io.gravitee.am.model.Application;
+import io.gravitee.am.model.oidc.Client;
+import io.gravitee.am.model.application.ApplicationOAuthSettings;
 import io.gravitee.am.service.exception.InvalidClientMetadataException;
 import io.reactivex.Single;
 
@@ -44,33 +46,41 @@ public class GrantTypeUtils {
      *  - refresh_token does not come with authorization_code, password or client_credentials grant.
      *  - client_credentials grant come with another grant that require user authentication.
      * </pre>
-     * @param client Client with grant_type to validate.
+     * @param application Application with grant_type to validate.
      * @return Single client or error
      */
-    public static Single<Client> validateGrantTypes(Client client) {
+    public static Single<Application> validateGrantTypes(Application application) {
 
-        if(client==null) {
-            return Single.error(new InvalidClientMetadataException("No client to validate grant"));
+        // no application to check, continue
+        if (application==null) {
+            return Single.error(new InvalidClientMetadataException("No application to validate grant"));
         }
 
-        if(client.getAuthorizedGrantTypes()==null || client.getAuthorizedGrantTypes().isEmpty()) {
-            return Single.just(client);
+        // no application settings to check, continue
+        if (application.getSettings() == null) {
+            return Single.just(application);
         }
 
-        if(!isSupportedGrantType(client.getAuthorizedGrantTypes())) {
+        // no application oauth settings to check, continue
+        if (application.getSettings().getOauth() == null) {
+            return Single.just(application);
+        }
+
+        ApplicationOAuthSettings oAuthSettings = application.getSettings().getOauth();
+        if (!isSupportedGrantType(oAuthSettings.getGrantTypes())) {
             return Single.error(new InvalidClientMetadataException("Missing or invalid grant type."));
         }
 
         //Ensure correspondance between response & grant types.
-        completeGrantTypeCorrespondance(client);
+        completeGrantTypeCorrespondance(application);
 
         //refresh_token are not allowed for all grant types...
-        Set<String> grantTypeSet = Collections.unmodifiableSet(new HashSet<>(client.getAuthorizedGrantTypes()));
+        Set<String> grantTypeSet = Collections.unmodifiableSet(new HashSet<>(oAuthSettings.getGrantTypes()));
         if(grantTypeSet.contains(REFRESH_TOKEN)) {
             //Hybrid is not managed yet and AM does not support refresh token for client_credentials for now...
             List<String> allowedRefreshTokenGrant = Arrays.asList(AUTHORIZATION_CODE, PASSWORD, JWT_BEARER);//, CLIENT_CREDENTIALS, HYBRID);
             //return true if there is no element in common
-            if(Collections.disjoint(client.getAuthorizedGrantTypes(), allowedRefreshTokenGrant)) {
+            if(Collections.disjoint(oAuthSettings.getGrantTypes(), allowedRefreshTokenGrant)) {
                 return Single.error(new InvalidClientMetadataException(
                         REFRESH_TOKEN+" grant type must be associated with one of "+String.join(", ",allowedRefreshTokenGrant)
                 ));
@@ -91,7 +101,7 @@ public class GrantTypeUtils {
         }
         */
 
-        return Single.just(client);
+        return Single.just(application);
     }
 
     public static List<String> getSupportedGrantTypes() {
@@ -155,13 +165,14 @@ public class GrantTypeUtils {
      * code token          : authorization_code, implicit
      * code id_token token : authorization_code, implicit
      *
-     * @param client Client to analyse.
+     * @param application Application to analyse.
      */
-    public static Client completeGrantTypeCorrespondance(Client client) {
+    public static Application completeGrantTypeCorrespondance(Application application) {
         boolean updatedGrantType = false;
 
-        Set responseType = client.getResponseTypes() != null ? new HashSet<>(client.getResponseTypes()) : new HashSet();
-        Set grantType = client.getAuthorizedGrantTypes() != null ? new HashSet<>(client.getAuthorizedGrantTypes()) : new HashSet();
+        ApplicationOAuthSettings oAuthSettings = application.getSettings().getOauth();
+        Set responseType = oAuthSettings.getResponseTypes() != null ? new HashSet<>(oAuthSettings.getResponseTypes()) : new HashSet();
+        Set grantType = oAuthSettings.getGrantTypes() != null ? new HashSet<>(oAuthSettings.getGrantTypes()) : new HashSet();
 
         //If response type contains "code", then grant_type must contains "authorization_code"
         if(mustHaveAuthorizationCode(responseType) && !grantType.contains(AUTHORIZATION_CODE)) {
@@ -189,16 +200,16 @@ public class GrantTypeUtils {
 
         //Finally in case of bad client status (no response/grant type) reset to default values...
         if(responseType.isEmpty() && grantType.isEmpty()) {
-            client.setResponseTypes(Client.DEFAULT_RESPONSE_TYPES);
-            client.setAuthorizedGrantTypes(Client.DEFAULT_GRANT_TYPES);
+            oAuthSettings.setResponseTypes(Client.DEFAULT_RESPONSE_TYPES);
+            oAuthSettings.setGrantTypes(Client.DEFAULT_GRANT_TYPES);
         }
 
         //if grant type list has been modified, then update it.
         else if(updatedGrantType) {
-            client.setAuthorizedGrantTypes((List<String>)grantType.stream().collect(Collectors.toList()));
+            oAuthSettings.setGrantTypes((List<String>)grantType.stream().collect(Collectors.toList()));
         }
 
-        return client;
+        return application;
     }
 
     private static boolean mustHaveAuthorizationCode(Set<String> responseType) {

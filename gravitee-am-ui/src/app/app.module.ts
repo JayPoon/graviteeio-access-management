@@ -53,7 +53,6 @@ import { LoginCallbackComponent } from './login/callback/callback.component';
 import { DomainsComponent } from './settings/domains/domains.component';
 import { DomainService } from './services/domain.service';
 import { DomainComponent } from './domain/domain.component';
-import { ClientsComponent } from './clients/clients.component';
 import { SidenavService } from "./components/sidenav/sidenav.service";
 import { ConfirmComponent } from './components/dialog/confirm/confirm.component';
 import { DialogService } from "./services/dialog.service";
@@ -61,20 +60,6 @@ import { SnackbarService } from "./services/snackbar.service";
 import { EmptystateComponent } from './components/emptystate/emptystate.component';
 import { DomainCreationComponent } from './settings/domains/creation/domain-creation.component';
 import { ProviderCreationComponent } from './domain/settings/providers/creation/provider-creation.component';
-import { ClientComponent } from './domain/clients/client/client.component';
-import { ClientCreationComponent } from './clients/creation/client-creation.component';
-import { ClientMetadataComponent, ClientSettingsComponent } from './domain/clients/client/settings/settings.component';
-import { ClientIdPComponent } from './domain/clients/client/idp/idp.component';
-import {
-  ClaimsInfoDialog,
-  ClientOAuth2Component,
-  CreateClaimComponent
-} from './domain/clients/client/oauth2/oauth2.component';
-import { ClientEmailsComponent } from './domain/clients/client/emails/emails.component';
-import { ClientEmailComponent } from './domain/clients/client/emails/email/email.component';
-import { ClientFormsComponent } from './domain/clients/client/forms/forms.component';
-import { ClientFormComponent } from './domain/clients/client/forms/form/form.component';
-import { ClientAccountSettingsComponent } from './domain/clients/client/account/account.component';
 import { ProviderCreationStep1Component } from './domain/settings/providers/creation/steps/step1/step1.component';
 import { ProviderCreationStep2Component } from './domain/settings/providers/creation/steps/step2/step2.component';
 import { ProviderComponent } from './domain/settings/providers/provider/provider.component';
@@ -140,9 +125,9 @@ import { SnackbarComponent } from "./components/snackbar/snackbar.component";
 import { NavbarComponent } from './components/navbar/navbar.component';
 import { DashboardComponent } from './dashboard/dashboard.component';
 import { DashboardService} from "./services/dashboard.service";
-import { WidgetClientsComponent } from './components/widget/clients/clients.component';
-import { WidgetTopClientsComponent } from './components/widget/top-clients/top-clients.component';
-import { WidgetTotalClientsComponent } from './components/widget/total-clients/total-clients.component';
+import { WidgetApplicationsComponent } from './components/widget/applications/applications.component';
+import { WidgetTopApplicationsComponent } from './components/widget/top-applications/top-applications.component';
+import { WidgetTotalApplicationsComponent } from './components/widget/total-applications/total-applications.component';
 import { WidgetTotalTokensComponent } from './components/widget/total-tokens/total-tokens.component';
 import { SettingsComponent } from './settings/settings.component';
 import { HumanDatePipe } from './pipes/human-date.pipe';
@@ -192,7 +177,6 @@ import { EmailComponent, EmailInfoDialog } from "./domain/components/emails/emai
 import { EmailService } from "./services/email.service";
 import { EmailResolver } from "./resolvers/email.resolver";
 import { SelectClientsComponent } from "./domain/components/clients/select-clients.component";
-import { ClientScopeComponent } from "./domain/clients/client/scopes/client-scope.component";
 import { ConsentsResolver } from "./resolvers/consents.resolver";
 import { AuditsComponent } from "./domain/settings/audits/audits.component";
 import { AuditComponent } from "./domain/settings/audits/audit/audit.component";
@@ -219,6 +203,27 @@ import { PolicyService } from "./services/policy.service";
 import { PoliciesResolver } from "./resolvers/policies.resolver";
 import { ScopeSelectionComponent} from "./domain/components/scope-selection/scope-selection.component";
 import { RoleSelectionComponent } from "./domain/components/role-selection/role-selection.component";
+import { ApplicationsComponent } from "./domain/applications/applications.component";
+import { ApplicationService } from "./services/application.service";
+import { ApplicationsResolver } from "./resolvers/applications.resolver";
+import { ApplicationResolver } from "./resolvers/application.resolver";
+import { ApplicationCreationComponent } from "./domain/applications/creation/application-creation.component";
+import { ApplicationCreationStep1Component } from "./domain/applications/creation/steps/step1/step1.component";
+import { ApplicationCreationStep2Component } from "./domain/applications/creation/steps/step2/step2.component";
+import { ApplicationComponent } from "./domain/applications/application/application.component";
+import { ApplicationSettingsComponent } from "./domain/applications/application/settings/settings.component";
+import { ApplicationIdPComponent } from "./domain/applications/application/idp/idp.component";
+import { ApplicationDesignComponent } from "./domain/applications/application/design/design.component";
+import { ApplicationFormsComponent } from "./domain/applications/application/design/forms/forms.component";
+import { ApplicationFormComponent } from "./domain/applications/application/design/forms/form/form.component";
+import { ApplicationEmailsComponent } from "./domain/applications/application/design/emails/emails.component";
+import { ApplicationEmailComponent } from "./domain/applications/application/design/emails/email/email.component";
+import { ApplicationAdvancedComponent } from "./domain/applications/application/advanced/advanced.component";
+import { ApplicationAccountSettingsComponent } from "./domain/applications/application/advanced/account/account.component";
+import { ApplicationOAuth2Component, ClaimsInfoDialog, CreateClaimComponent } from "./domain/applications/application/advanced/oauth2/oauth2.component";
+import { ApplicationScopeComponent } from "./domain/applications/application/advanced/oauth2/scopes/application-scope.component";
+import { ApplicationCertificatesComponent } from "./domain/applications/application/advanced/certificates/certificates.component";
+import { ApplicationMetadataComponent } from "./domain/applications/application/advanced/metadata/metadata.component";
 
 @NgModule({
   declarations: [
@@ -249,22 +254,10 @@ import { RoleSelectionComponent } from "./domain/components/role-selection/role-
     DomainSettingsEmailComponent,
     DomainSettingsAccountComponent,
     DomainSettingsPoliciesComponent,
-    ClientsComponent,
     ConfirmComponent,
     EmptystateComponent,
     DomainCreationComponent,
     ProviderCreationComponent,
-    ClientComponent,
-    ClientCreationComponent,
-    ClientSettingsComponent,
-    ClientOAuth2Component,
-    ClientIdPComponent,
-    ClientEmailsComponent,
-    ClientEmailComponent,
-    ClientFormsComponent,
-    ClientFormComponent,
-    ClientAccountSettingsComponent,
-    ClientMetadataComponent,
     ProviderCreationStep1Component,
     ProviderCreationStep2Component,
     ProviderComponent,
@@ -294,9 +287,9 @@ import { RoleSelectionComponent } from "./domain/components/role-selection/role-
     SnackbarComponent,
     NavbarComponent,
     DashboardComponent,
-    WidgetClientsComponent,
-    WidgetTopClientsComponent,
-    WidgetTotalClientsComponent,
+    WidgetApplicationsComponent,
+    WidgetTopApplicationsComponent,
+    WidgetTotalApplicationsComponent,
     WidgetTotalTokensComponent,
     SettingsComponent,
     HumanDatePipe,
@@ -332,7 +325,6 @@ import { RoleSelectionComponent } from "./domain/components/role-selection/role-
     EmailComponent,
     EmailInfoDialog,
     SelectClientsComponent,
-    ClientScopeComponent,
     AuditsComponent,
     AuditComponent,
     AuditsSettingsComponent,
@@ -346,7 +338,25 @@ import { RoleSelectionComponent } from "./domain/components/role-selection/role-
     PoliciesInfoDialog,
     ScopeSelectionComponent,
     ClaimsInfoDialog,
-    RoleSelectionComponent
+    RoleSelectionComponent,
+    ApplicationsComponent,
+    ApplicationCreationComponent,
+    ApplicationCreationStep1Component,
+    ApplicationCreationStep2Component,
+    ApplicationComponent,
+    ApplicationSettingsComponent,
+    ApplicationIdPComponent,
+    ApplicationDesignComponent,
+    ApplicationFormsComponent,
+    ApplicationFormComponent,
+    ApplicationEmailsComponent,
+    ApplicationEmailComponent,
+    ApplicationAdvancedComponent,
+    ApplicationAccountSettingsComponent,
+    ApplicationOAuth2Component,
+    ApplicationScopeComponent,
+    ApplicationCertificatesComponent,
+    ApplicationMetadataComponent
   ],
   imports: [
     BrowserModule,
@@ -418,6 +428,9 @@ import { RoleSelectionComponent } from "./domain/components/role-selection/role-
     TagResolver,
     PolicyService,
     PoliciesResolver,
+    ApplicationService,
+    ApplicationsResolver,
+    ApplicationResolver,
     {
       provide: HTTP_INTERCEPTORS,
       useClass: HttpRequestInterceptor,
@@ -444,8 +457,7 @@ import { RoleSelectionComponent } from "./domain/components/role-selection/role-
     PoliciesInfoDialog,
     ClaimsInfoDialog,
     AddUserRolesComponent,
-    AddGroupRolesComponent,
-    ClientMetadataComponent
+    AddGroupRolesComponent
   ],
   bootstrap: [AppComponent]
 })

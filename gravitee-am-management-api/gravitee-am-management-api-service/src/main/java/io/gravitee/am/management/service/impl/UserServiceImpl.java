@@ -25,7 +25,7 @@ import io.gravitee.am.management.service.EmailManager;
 import io.gravitee.am.management.service.EmailService;
 import io.gravitee.am.management.service.IdentityProviderManager;
 import io.gravitee.am.management.service.UserService;
-import io.gravitee.am.model.Client;
+import io.gravitee.am.model.oidc.Client;
 import io.gravitee.am.model.Role;
 import io.gravitee.am.model.Template;
 import io.gravitee.am.model.User;

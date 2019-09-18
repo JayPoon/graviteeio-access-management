@@ -15,7 +15,7 @@
  */
 package io.gravitee.am.repository.mongodb.management;
 
-import io.gravitee.am.model.Client;
+import io.gravitee.am.model.oidc.Client;
 import io.gravitee.am.model.common.Page;
 import io.gravitee.am.repository.exceptions.TechnicalException;
 import io.gravitee.am.repository.management.api.ClientRepository;

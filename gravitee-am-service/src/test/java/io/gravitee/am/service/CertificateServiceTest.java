@@ -18,7 +18,7 @@ package io.gravitee.am.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.gravitee.am.model.Certificate;
-import io.gravitee.am.model.Client;
+import io.gravitee.am.model.oidc.Client;
 import io.gravitee.am.model.Domain;
 import io.gravitee.am.plugins.certificate.core.CertificateSchema;
 import io.gravitee.am.repository.exceptions.TechnicalException;

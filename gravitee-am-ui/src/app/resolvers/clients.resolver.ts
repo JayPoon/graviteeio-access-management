@@ -35,7 +35,7 @@ export class ClientsResolver implements Resolve<any> {
     if (domainId) {
       return this.clientService.findByDomain(domainId);
     } else {
-      return this.dashboardService.findClients(null);
+      return this.dashboardService.findApplications(null);
     }
   }
 
